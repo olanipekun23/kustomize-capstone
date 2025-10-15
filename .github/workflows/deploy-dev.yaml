@@ -19,10 +19,13 @@ jobs:
         with:
           version: 'latest'
 
-      - name: Set up Kustomize
+      - name: Install Kustomize
         run: |
-          sudo apt-get update -y
-          sudo apt-get install -y kustomize
+          KUSTOMIZE_VERSION=$(curl -s https://api.github.com/repos/kubernetes-sigs/kustomize/releases/latest | grep tag_name | cut -d '"' -f 4)
+          curl -L -o kustomize.tar.gz "https://github.com/kubernetes-sigs/kustomize/releases/download/${KUSTOMIZE_VERSION}/kustomize_${KUSTOMIZE_VERSION}_linux_amd64.tar.gz"
+          tar -xzf kustomize.tar.gz
+          chmod +x kustomize
+          sudo mv kustomize /usr/local/bin/
 
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v4
@@ -42,15 +45,4 @@ jobs:
       - name: Verify Deployment
         run: |
           kubectl get all
-
-      - name: Install Kustomize
-        run: |
-          curl -s "https://api.github.com/repos/kubernetes-sigs/kustomize/releases/latest" \
-          | grep browser_download_url \
-          | grep linux_amd64 \
-          | cut -d '"' -f 4 \
-          | xargs curl -s -Lo kustomize
-          chmod +x kustomize
-          sudo mv kustomize /usr/local/bin/
-
 
