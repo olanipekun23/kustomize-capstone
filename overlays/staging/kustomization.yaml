@@ -1,0 +1,14 @@
+configMapGenerator:
+- literals:
+  - ENV=staging
+  name: app-config
+secretGenerator:
+- literals:
+  - DB_PASSWORD=stagingpassword
+  name: db-secret
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+- ../../base
+patches:
+- path: deployment-patch.yaml
