@@ -1,0 +1,45 @@
+name: Deploy Dev Environment
+
+on:
+  push:
+    branches:
+      - dev
+
+jobs:
+  deploy:
+    name: Apply Kustomize Configuration to Dev Cluster
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set up kubectl
+        uses: azure/setup-kubectl@v4
+        with:
+          version: 'latest'
+
+      - name: Set up Kustomize
+        run: |
+          sudo apt-get update -y
+          sudo apt-get install -y kustomize
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: eu-north-1
+
+      - name: Update kubeconfig for EKS cluster
+        run: |
+          aws eks update-kubeconfig --region eu-north-1 --name advanced-kustomize-cluster
+
+      - name: Deploy Dev Environment using Kustomize
+        run: |
+          kubectl apply -k overlays/dev
+
+      - name: Verify Deployment
+        run: |
+          kubectl get all
+
