@@ -6,12 +6,10 @@ on:
       - dev
 
 jobs:
-  deploy:
-    name: Apply Kustomize Configuration to Dev Cluster
+  apply-dev:
     runs-on: ubuntu-latest
-
     steps:
-      - name: Checkout Code
+      - name: Checkout repository
         uses: actions/checkout@v4
 
       - name: Set up kubectl
@@ -21,29 +19,17 @@ jobs:
 
       - name: Install Kustomize
         run: |
-          KUSTOMIZE_VERSION=$(curl -s https://api.github.com/repos/kubernetes-sigs/kustomize/releases/latest | grep '"tag_name":' | sed -E 's/.*"([^"]+)".*/\1/')
-          echo "Installing Kustomize version ${KUSTOMIZE_VERSION}"
-          curl -L -o kustomize.tar.gz "https://github.com/kubernetes-sigs/kustomize/releases/download/${KUSTOMIZE_VERSION}/kustomize_${KUSTOMIZE_VERSION}_linux_amd64.tar.gz"
-          tar -zxvf kustomize.tar.gz
-          chmod +x kustomize
-          sudo mv kustomize /usr/local/bin/kustomize
+          curl -s "https://raw.githubusercontent.com/kubernetes-sigs/kustomize/master/hack/install_kustomize.sh" | bash
+          sudo mv kustomize /usr/local/bin/
+          kustomize version
 
-      - name: Configure AWS Credentials
-        uses: aws-actions/configure-aws-credentials@v4
-        with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: eu-north-1
-
-      - name: Update kubeconfig for EKS cluster
+      - name: Configure kubectl
         run: |
-          aws eks update-kubeconfig --region eu-north-1 --name advanced-kustomize-cluster
+          mkdir -p $HOME/.kube
+          echo "${{ secrets.KUBE_CONFIG_DEV }}" > $HOME/.kube/config
 
-      - name: Deploy Dev Environment using Kustomize
+      - name: Apply Kustomize Configuration to Dev Cluster
         run: |
-          kubectl apply -k overlays/dev
-
-      - name: Verify Deployment
-        run: |
-          kubectl get all
+          cd dev
+          kustomize build . | kubectl apply -f -
 
