@@ -22,34 +22,35 @@ jobs:
 
       - name: Install Kustomize
         run: |
-          # Fetch the latest release tag dynamically
-          KUSTOMIZE_VERSION=$(curl -s https://api.github.com/repos/kubernetes-sigs/kustomize/releases/latest | grep tag_name | cut -d '"' -f 4)
-          echo "Installing Kustomize version $KUSTOMIZE_VERSION"
-          curl -sLo kustomize.tar.gz "https://github.com/kubernetes-sigs/kustomize/releases/download/${KUSTOMIZE_VERSION}/kustomize_${KUSTOMIZE_VERSION}_linux_amd64.tar.gz"
+          LATEST_VERSION=$(curl -s https://api.github.com/repos/kubernetes-sigs/kustomize/releases/latest | grep tag_name | cut -d '"' -f 4)
+          curl -sLo kustomize.tar.gz https://github.com/kubernetes-sigs/kustomize/releases/download/${LATEST_VERSION}/kustomize_${LATEST_VERSION}_linux_amd64.tar.gz
           tar -xzf kustomize.tar.gz
           sudo mv kustomize /usr/local/bin/
           kustomize version
 
-      - name: Set up kubeconfig
+      - name: Configure Kubeconfig
         env:
-          KUBECONFIG_DATA: ${{ secrets.KUBECONFIG_DATA }}
+          KUBE_CONFIG_DATA: ${{ secrets.KUBE_CONFIG_DATA }}
         run: |
           mkdir -p $HOME/.kube
-          echo "$KUBECONFIG_DATA" | base64 --decode > $HOME/.kube/config
+          echo "$KUBE_CONFIG_DATA" | base64 --decode > $HOME/.kube/config
 
-      - name: Deploy with Kustomize
+      - name: Deploy to Kubernetes
         run: |
           BRANCH=${GITHUB_REF##*/}
-          echo "Deploying branch: $BRANCH"
-
-          if [[ "$BRANCH" == "dev" ]]; then
-            kubectl apply -k overlays/dev
-          elif [[ "$BRANCH" == "staging" ]]; then
-            kubectl apply -k overlays/staging
-          elif [[ "$BRANCH" == "main" ]]; then
-            kubectl apply -k overlays/prod
-          else
-            echo "Branch not recognized for deployment"
-            exit 0
-          fi
+          echo "Deploying overlay for branch: $BRANCH"
+          case $BRANCH in
+            dev)
+              kubectl apply -k overlays/dev
+              ;;
+            staging)
+              kubectl apply -k overlays/staging
+              ;;
+            main)
+              kubectl apply -k overlays/prod
+              ;;
+            *)
+              echo "No overlay found for branch: $BRANCH"
+              ;;
+          esac
 
