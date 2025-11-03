@@ -22,11 +22,11 @@ jobs:
 
       - name: Install Kustomize
         run: |
-          LATEST_VERSION=$(curl -s https://api.github.com/repos/kubernetes-sigs/kustomize/releases/latest | grep tag_name | cut -d '"' -f 4)
-          curl -sLo kustomize.tar.gz https://github.com/kubernetes-sigs/kustomize/releases/download/${LATEST_VERSION}/kustomize_${LATEST_VERSION}_linux_amd64.tar.gz
-          tar -xzf kustomize.tar.gz
+          curl -sLo kustomize https://github.com/kubernetes-sigs/kustomize/releases/latest/download/kustomize_linux_amd64
+          chmod +x kustomize
           sudo mv kustomize /usr/local/bin/
           kustomize version
+
 
       - name: Configure Kubeconfig
         env:
