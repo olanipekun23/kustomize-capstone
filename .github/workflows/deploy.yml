@@ -5,7 +5,7 @@ on:
     branches:
       - dev
       - staging
-      - main  # for production
+      - main  # production
 
 jobs:
   deploy:
@@ -20,35 +20,36 @@ jobs:
         with:
           version: 'latest'
 
-      - name: Set up Kustomize
+      - name: Install Kustomize
         run: |
+          # Fetch the latest release tag dynamically
           KUSTOMIZE_VERSION=$(curl -s https://api.github.com/repos/kubernetes-sigs/kustomize/releases/latest | grep tag_name | cut -d '"' -f 4)
-          curl -sLo kustomize.tar.gz https://github.com/kubernetes-sigs/kustomize/releases/download/${KUSTOMIZE_VERSION}/kustomize_${KUSTOMIZE_VERSION}_linux_amd64.tar.gz
+          echo "Installing Kustomize version $KUSTOMIZE_VERSION"
+          curl -sLo kustomize.tar.gz "https://github.com/kubernetes-sigs/kustomize/releases/download/${KUSTOMIZE_VERSION}/kustomize_${KUSTOMIZE_VERSION}_linux_amd64.tar.gz"
           tar -xzf kustomize.tar.gz
           sudo mv kustomize /usr/local/bin/
           kustomize version
 
-      - name: Configure kubectl
+      - name: Set up kubeconfig
         env:
           KUBECONFIG_DATA: ${{ secrets.KUBECONFIG_DATA }}
         run: |
           mkdir -p $HOME/.kube
           echo "$KUBECONFIG_DATA" | base64 --decode > $HOME/.kube/config
-          kubectl version --client
-          kubectl config get-contexts
 
-      - name: Deploy to Kubernetes
+      - name: Deploy with Kustomize
         run: |
-          BRANCH_NAME=${GITHUB_REF##*/}
-          echo "Deploying from branch: $BRANCH_NAME"
+          BRANCH=${GITHUB_REF##*/}
+          echo "Deploying branch: $BRANCH"
 
-          if [[ "$BRANCH_NAME" == "dev" ]]; then
+          if [[ "$BRANCH" == "dev" ]]; then
             kubectl apply -k overlays/dev
-          elif [[ "$BRANCH_NAME" == "staging" ]]; then
+          elif [[ "$BRANCH" == "staging" ]]; then
             kubectl apply -k overlays/staging
-          elif [[ "$BRANCH_NAME" == "main" ]]; then
+          elif [[ "$BRANCH" == "main" ]]; then
             kubectl apply -k overlays/prod
           else
-            echo "Branch does not match any environment — skipping deployment."
+            echo "Branch not recognized for deployment"
+            exit 0
           fi
 
