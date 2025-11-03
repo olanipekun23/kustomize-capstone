@@ -25,6 +25,8 @@ jobs:
           curl -sfLo kustomize https://github.com/kubernetes-sigs/kustomize/releases/latest/download/kustomize_linux_amd64
           chmod +x kustomize
           sudo mv kustomize /usr/local/bin/
+          kustomize version
+
 
       - name: Set Kubeconfig
         env:
