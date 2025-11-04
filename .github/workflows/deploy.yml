@@ -22,8 +22,7 @@ jobs:
 
       - name: Install Kustomize
         run: |
-          curl -sfLo kustomize.tar.gz https://github.com/kubernetes-sigs/kustomize/releases/download/kustomize%2Fv5.7.1/kustomize_v5.7.1_linux_amd64.tar.gz
-          tar -xzf kustomize.tar.gz
+          curl -s "https://raw.githubusercontent.com/kubernetes-sigs/kustomize/master/hack/install_kustomize.sh" | bash
           sudo mv kustomize /usr/local/bin/
           kustomize version
 
@@ -36,11 +35,16 @@ jobs:
 
       - name: Deploy using Kustomize
         run: |
-          if [[ "${GITHUB_REF##*/}" == "dev" ]]; then
+          BRANCH_NAME="${GITHUB_REF##*/}"
+          echo "Deploying for branch: $BRANCH_NAME"
+          if [ "$BRANCH_NAME" = "dev" ]; then
             kubectl apply -k overlays/dev
-          elif [[ "${GITHUB_REF##*/}" == "staging" ]]; then
+          elif [ "$BRANCH_NAME" = "staging" ]; then
             kubectl apply -k overlays/staging
-          elif [[ "${GITHUB_REF##*/}" == "main" ]]; then
+          elif [ "$BRANCH_NAME" = "main" ]; then
             kubectl apply -k overlays/prod
+          else
+            echo "No matching environment for branch: $BRANCH_NAME"
+            exit 0
           fi
 

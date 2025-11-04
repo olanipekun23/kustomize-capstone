@@ -1,9 +1,9 @@
-name: Deploy to Development
+name: Deploy to Production
 
 on:
   push:
     branches:
-      - dev
+      - main
 
 jobs:
   deploy:
@@ -15,8 +15,6 @@ jobs:
 
       - name: Set up kubectl
         uses: azure/setup-kubectl@v4
-        with:
-          version: 'latest'
 
       - name: Install Kustomize
         run: |
@@ -26,12 +24,12 @@ jobs:
 
       - name: Configure Kubeconfig
         env:
-          KUBECONFIG_DATA: ${{ secrets.KUBECONFIG_DATA_DEV }}
+          KUBECONFIG_DATA: ${{ secrets.KUBECONFIG_DATA_PROD }}
         run: |
           mkdir -p ~/.kube
           echo "$KUBECONFIG_DATA" | base64 --decode > ~/.kube/config
 
-      - name: Deploy to Development
+      - name: Deploy to Production
         run: |
-          kubectl apply -k overlays/dev
+          kubectl apply -k overlays/prod
 
