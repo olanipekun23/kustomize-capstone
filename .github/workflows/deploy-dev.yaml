@@ -1,18 +1,16 @@
-name: CI/CD with Kustomize and Kubernetes
+name: Deploy Dev Environment
 
 on:
   push:
     branches:
       - dev
-      - staging
-      - main  # production
 
 jobs:
-  deploy:
+  deploy-dev:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout code
+      - name: Checkout Code
         uses: actions/checkout@v4
 
       - name: Set up kubectl
@@ -34,13 +32,6 @@ jobs:
           mkdir -p $HOME/.kube
           echo "$KUBECONFIG_DATA" | base64 --decode > $HOME/.kube/config
 
-      - name: Deploy using Kustomize
-        run: |
-          if [[ "${GITHUB_REF##*/}" == "dev" ]]; then
-            kubectl apply -k overlays/dev
-          elif [[ "${GITHUB_REF##*/}" == "staging" ]]; then
-            kubectl apply -k overlays/staging
-          elif [[ "${GITHUB_REF##*/}" == "main" ]]; then
-            kubectl apply -k overlays/prod
-          fi
+      - name: Apply Kustomize Configuration to Dev Cluster
+        run: kubectl apply -k overlays/dev
 
