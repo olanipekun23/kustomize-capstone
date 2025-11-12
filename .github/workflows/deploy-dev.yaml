@@ -26,10 +26,10 @@ jobs:
           version: 'latest'
 
       - name: Update kubeconfig for EKS
-         run: |
+        run: |
           aws eks update-kubeconfig \
-            --region ${{ secrets.AWS_REGION }} \
-            --name ${{ secrets.CLUSTER_NAME }}
+            --name kustomize-capstone-cluster \
+            --region ${{ secrets.AWS_REGION }}
 
 
       - name: Install Kustomize
