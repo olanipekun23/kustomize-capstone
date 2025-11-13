@@ -10,12 +10,11 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      # 1. Checkout repo
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Set up kubectl
-        uses: azure/setup-kubectl@v4
-
+      # 2. Configure AWS credentials
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v2
         with:
@@ -23,24 +22,30 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ secrets.AWS_REGION }}
 
+      # 3. Install kubectl
+      - name: Set up kubectl
+        uses: azure/setup-kubectl@v4
+        with:
+          version: 'latest'
+
+      # 4. Update kubeconfig for EKS
       - name: Update kubeconfig for EKS
         run: |
           aws eks update-kubeconfig --name kustomize-capstone-cluster --region ${{ secrets.AWS_REGION }}
 
-
+      # 5. Install Kustomize
       - name: Install Kustomize
         run: |
-          curl -s "https://raw.githubusercontent.com/kubernetes-sigs/kustomize/master/hack/install_kustomize.sh" | bash
+          curl -sfLo kustomize https://github.com/kubernetes-sigs/kustomize/releases/latest/download/kustomize_linux_amd64
+          chmod +x kustomize
           sudo mv kustomize /usr/local/bin/
           kustomize version
 
-      - name: Configure Kubeconfig
-        env:
-          KUBECONFIG_DATA: ${{ secrets.KUBECONFIG_DATA_PROD }}
-        run: |
-          mkdir -p ~/.kube
-          echo "$KUBECONFIG_DATA" | base64 --decode > ~/.kube/config
+      # 6. Test kubectl connectivity
+      - name: Test kubectl access
+        run: kubectl get nodes
 
+      # 7. Deploy to production overlay
       - name: Deploy to Production
         run: |
           kubectl apply -k overlays/prod
