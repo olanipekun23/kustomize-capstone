@@ -10,43 +10,46 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # 1. Checkout code
+      # 1. Checkout the repo
       - name: Checkout code
         uses: actions/checkout@v4
 
-      # 2. Configure AWS credentials
+      # 2. Configure AWS credentials for GitHub Actions
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v2
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: eu-north-1
+          aws-region: ${{ secrets.AWS_REGION }}
 
-      # 3. Test AWS credentials
-      - name: Test AWS access
-        run: |
-          echo "Testing AWS credentials..."
-          aws sts get-caller-identity
-
-      # 4. Set up kubectl
+      # 3. Install kubectl
       - name: Set up kubectl
         uses: azure/setup-kubectl@v4
         with:
           version: 'latest'
 
-      # 5. Update kubeconfig for EKS
+      # 4. Update kubeconfig to point to EKS cluster
       - name: Update kubeconfig for EKS
         run: |
-          aws eks update-kubeconfig --name ${{ secrets.EKS_CLUSTER_NAME }} --region ${{ secrets.AWS_REGION }}
+          aws eks update-kubeconfig \
+            --name ${{ secrets.EKS_CLUSTER_NAME }} \
+            --region ${{ secrets.AWS_REGION }}
 
-      # 6. Install Kustomize
+      # 5. Install Kustomize
       - name: Install Kustomize
         run: |
-          curl -s "https://raw.githubusercontent.com/kubernetes-sigs/kustomize/master/hack/install_kustomize.sh" | bash
+          curl -sfLo kustomize https://github.com/kubernetes-sigs/kustomize/releases/latest/download/kustomize_linux_amd64
+          chmod +x kustomize
           sudo mv kustomize /usr/local/bin/
           kustomize version
 
-      # 7. Deploy staging overlay
+      # 6. Verify AWS and kubectl access
+      - name: Test AWS and kubectl
+        run: |
+          aws sts get-caller-identity
+          kubectl get nodes
+
+      # 7. Deploy staging overlay using Kustomize
       - name: Deploy to Staging
         run: |
           kubectl apply -k overlays/staging
