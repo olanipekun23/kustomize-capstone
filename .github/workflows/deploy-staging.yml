@@ -22,25 +22,31 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ secrets.AWS_REGION }}
 
-      # 3. Set up kubectl
+      # 3. Test AWS credentials
+      - name: Test AWS access
+        run: |
+          echo "Testing AWS credentials..."
+          aws sts get-caller-identity
+
+      # 4. Set up kubectl
       - name: Set up kubectl
         uses: azure/setup-kubectl@v4
         with:
           version: 'latest'
 
-      # 4. Update kubeconfig for EKS
+      # 5. Update kubeconfig for EKS
       - name: Update kubeconfig for EKS
         run: |
           aws eks update-kubeconfig --name ${{ secrets.EKS_CLUSTER_NAME }} --region ${{ secrets.AWS_REGION }}
 
-      # 5. Install Kustomize
+      # 6. Install Kustomize
       - name: Install Kustomize
         run: |
           curl -s "https://raw.githubusercontent.com/kubernetes-sigs/kustomize/master/hack/install_kustomize.sh" | bash
           sudo mv kustomize /usr/local/bin/
           kustomize version
 
-      # 6. Deploy staging overlay
+      # 7. Deploy staging overlay
       - name: Deploy to Staging
         run: |
           kubectl apply -k overlays/staging
