@@ -14,11 +14,6 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Debug AWS credentials
-        run: |
-          echo "Checking AWS CLI credentials..."
-          aws sts get-caller-identity
-
 
       # 2. Configure AWS credentials
       - name: Configure AWS credentials
