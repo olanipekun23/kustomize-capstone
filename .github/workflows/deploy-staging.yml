@@ -14,7 +14,7 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      # 2. Configure AWS credentials (must be before any AWS commands)
+      # 2. Configure AWS credentials
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v2
         with:
@@ -41,6 +41,14 @@ jobs:
           aws eks update-kubeconfig \
             --name "${{ secrets.EKS_CLUSTER_NAME }}" \
             --region "${{ secrets.AWS_REGION }}"
+
+      # 5a. Debug AWS and EKS connectivity
+      - name: Debug AWS and EKS access
+        run: |
+          echo "Verifying AWS identity"
+          aws sts get-caller-identity
+          echo "Describing EKS cluster"
+          aws eks describe-cluster --name "${{ secrets.EKS_CLUSTER_NAME }}" --region "${{ secrets.AWS_REGION }}"
 
       # 6. Verify cluster connectivity
       - name: Test kubectl access
