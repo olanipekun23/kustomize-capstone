@@ -14,6 +14,12 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      - name: Debug AWS credentials
+        run: |
+          echo "Checking AWS CLI credentials..."
+          aws sts get-caller-identity
+
+
       # 2. Configure AWS credentials
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v2
@@ -57,4 +63,3 @@ jobs:
       # 7. Deploy staging overlay using Kustomize
       - name: Deploy to Staging
         run: kubectl apply -k overlays/staging
-
