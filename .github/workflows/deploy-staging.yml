@@ -10,11 +10,11 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # 1. Checkout code
+      # 1. Checkout repository
       - name: Checkout code
         uses: actions/checkout@v4
 
-      # 2. Configure AWS credentials
+      # 2. Configure AWS credentials (must be before any AWS commands)
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v2
         with:
@@ -23,7 +23,7 @@ jobs:
           aws-region: ${{ secrets.AWS_REGION }}
 
       # 3. Install kubectl
-      - name: Install kubectl
+      - name: Set up kubectl
         uses: azure/setup-kubectl@v4
         with:
           version: 'latest'
@@ -35,21 +35,18 @@ jobs:
           sudo mv kustomize /usr/local/bin/
           kustomize version
 
-      # 5. Update kubeconfig for EKS
-      - name: Update kubeconfig
+      # 5. Update kubeconfig for EKS cluster
+      - name: Update kubeconfig for EKS
         run: |
           aws eks update-kubeconfig \
             --name "${{ secrets.EKS_CLUSTER_NAME }}" \
             --region "${{ secrets.AWS_REGION }}"
 
-      # 6. Test kubectl access
-      - name: Test cluster connectivity
-        run: |
-          kubectl get nodes
+      # 6. Verify cluster connectivity
+      - name: Test kubectl access
+        run: kubectl get nodes
 
-      # 7. Deploy staging overlay
-      - name: Deploy using Kustomize
-        run: |
-          echo "Deploying for branch: staging"
-          kubectl apply -k overlays/staging
+      # 7. Deploy staging overlay using Kustomize
+      - name: Deploy to Staging
+        run: kubectl apply -k overlays/staging
 
