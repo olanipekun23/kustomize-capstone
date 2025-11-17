@@ -36,11 +36,13 @@ jobs:
           sudo mv kustomize /usr/local/bin/
           kustomize version
 
-      # 5. Write kubeconfig from GitHub secret
-      - name: Write kubeconfig
+       # 5. Update kubeconfig for EKS
+      - name: Update kubeconfig
         run: |
-          echo "${{ secrets.KUBECONFIG_DATA_STAGING }}" | base64 -d > kubeconfig
-          export KUBECONFIG=$(pwd)/kubeconfig
+          aws eks update-kubeconfig \
+            --name "${{ secrets.EKS_CLUSTER_NAME }}" \
+            --region "${{ secrets.AWS_REGION }}"
+
 
 
       # 5a. Debug AWS and EKS connectivity
